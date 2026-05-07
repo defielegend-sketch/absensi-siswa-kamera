@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+static/photos/*.png
+absensi_siswa.csv
+.env
+.venv
+env/
+venv/
