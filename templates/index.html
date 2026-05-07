@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Absensi Siswa Online - Kamera</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #4f46e5;
+            --secondary-color: #10b981;
+            --bg-color: #f3f4f6;
+            --card-bg: #ffffff;
+            --text-color: #1f2937;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 600px;
+            width: 100%;
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: var(--primary-color);
+            margin-bottom: 20px;
+        }
+
+        .date-display {
+            text-align: center;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #6b7280;
+        }
+
+        .camera-container {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 4/3;
+            background: #000;
+            border-radius: 15px;
+            overflow: hidden;
+            margin-bottom: 20px;
+            border: 4px solid var(--primary-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        video, canvas {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .camera-error {
+            color: white;
+            text-align: center;
+            padding: 20px;
+            display: none;
+        }
+
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            font-size: 16px;
+            box-sizing: border-box;
+            transition: border-color 0.3s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        .btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, background 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .btn:hover {
+            background: #4338ca;
+            transform: translateY(-2px);
+        }
+
+        .btn:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+        }
+
+        .btn-capture {
+            background: var(--secondary-color);
+        }
+
+        .btn-capture:hover {
+            background: #059669;
+        }
+
+        #photo-preview {
+            display: none;
+            width: 100%;
+            border-radius: 10px;
+            margin-top: 10px;
+            border: 2px solid var(--secondary-color);
+        }
+
+        .attendance-list {
+            margin-top: 30px;
+            width: 100%;
+            max-width: 600px;
+        }
+
+        .attendance-item {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        .attendance-item img {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .attendance-info {
+            flex-grow: 1;
+        }
+
+        .attendance-info h4 {
+            margin: 0;
+            color: var(--primary-color);
+        }
+
+        .attendance-info p {
+            margin: 2px 0;
+            font-size: 12px;
+            color: #6b7280;
+        }
+
+        .status-msg {
+            margin-top: 10px;
+            text-align: center;
+            font-size: 14px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Absensi Siswa</h1>
+        <div id="date-display" class="date-display"></div>
+
+        <div class="camera-container">
+            <video id="video" autoplay playsinline></video>
+            <div id="camera-error" class="camera-error">
+                ⚠️ Kamera tidak terdeteksi atau izin ditolak.<br>
+                Pastikan menggunakan HTTPS atau localhost.
+            </div>
+            <canvas id="canvas" style="display:none;"></canvas>
+        </div>
+
+        <div class="controls">
+            <input type="text" id="student-name" placeholder="Masukkan Nama Lengkap" required>
+            <select id="student-class">
+                <option value="">Pilih Kelas</option>
+                <option value="X TJKT 1">X TJKT 1</option>
+                <option value="X TJKT 2">X TJKT 2</option>
+                <option value="XI TJKT 1">XI TJKT 1</option>
+                <option value="XI TJKT 2">XI TJKT 2</option>
+                <option value="XII TJKT 1">XII TJKT 1</option>
+                <option value="XII TJKT 2">XII TJKT 2</option>
+            </select>
+            
+            <button class="btn btn-capture" id="capture-btn">
+                📸 Ambil Foto & Absen
+            </button>
+        </div>
+
+        <div id="status-msg" class="status-msg"></div>
+        <img id="photo-preview" src="" alt="Preview Foto">
+    </div>
+
+    <div class="attendance-list" id="attendance-list">
+        <!-- Data absen akan muncul di sini -->
+    </div>
+
+    <script>
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const captureBtn = document.getElementById('capture-btn');
+        const photoPreview = document.getElementById('photo-preview');
+        const dateDisplay = document.getElementById('date-display');
+        const attendanceList = document.getElementById('attendance-list');
+        const cameraError = document.getElementById('camera-error');
+        const statusMsg = document.getElementById('status-msg');
+
+        // Update Tanggal
+        function updateDate() {
+            const now = new Date();
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' };
+            dateDisplay.innerText = now.toLocaleDateString('id-ID', options);
+        }
+        setInterval(updateDate, 1000);
+        updateDate();
+
+        // Akses Kamera
+        async function initCamera() {
+            try {
+                const constraints = { 
+                    video: { 
+                        facingMode: 'user',
+                        width: { ideal: 640 },
+                        height: { ideal: 480 }
+                    }, 
+                    audio: false 
+                };
+                const stream = await navigator.mediaDevices.getUserMedia(constraints);
+                video.srcObject = stream;
+                video.style.display = 'block';
+                cameraError.style.display = 'none';
+            } catch (err) {
+                console.error("Gagal mengakses kamera: ", err);
+                video.style.display = 'none';
+                cameraError.style.display = 'block';
+                captureBtn.disabled = true;
+                
+                if (location.protocol === 'file:') {
+                    cameraError.innerHTML = "⚠️ <b>Error: Protokol File detected.</b><br>Kamera hanya berfungsi jika dijalankan melalui server (http:// atau https://).";
+                }
+            }
+        }
+        initCamera();
+
+        // Simpan Absensi
+        captureBtn.addEventListener('click', async () => {
+            const name = document.getElementById('student-name').value;
+            const className = document.getElementById('student-class').value;
+
+            if (!name || !className) {
+                alert("Harap isi nama dan pilih kelas!");
+                return;
+            }
+
+            statusMsg.innerText = "⏳ Sedang memproses...";
+            statusMsg.style.color = "blue";
+            captureBtn.disabled = true;
+
+            // Ambil gambar dari video
+            const context = canvas.getContext('2d');
+            canvas.width = video.videoWidth || 640;
+            canvas.height = video.videoHeight || 480;
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            
+            const imageData = canvas.toDataURL('image/png');
+            
+            try {
+                // Kirim ke Backend
+                const response = await fetch('/submit', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: name,
+                        class: className,
+                        photo: imageData
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.status === 'success') {
+                    statusMsg.innerText = "✅ Absensi Berhasil Disimpan!";
+                    statusMsg.style.color = "green";
+                    
+                    // Tampilkan preview dan reset form
+                    photoPreview.src = imageData;
+                    photoPreview.style.display = 'block';
+                    document.getElementById('student-name').value = '';
+                    document.getElementById('student-class').value = '';
+                    
+                    addToList(result.data);
+                } else {
+                    throw new Error(result.message);
+                }
+            } catch (error) {
+                statusMsg.innerText = "❌ Gagal: " + error.message;
+                statusMsg.style.color = "red";
+            } finally {
+                captureBtn.disabled = false;
+            }
+        });
+
+        function addToList(data) {
+            const div = document.createElement('div');
+            div.className = 'attendance-item';
+            div.innerHTML = `
+                <img src="/static/photos/${data.photo}" alt="Foto">
+                <div class="attendance-info">
+                    <h4>${data.name}</h4>
+                    <p>Kelas: ${data.class}</p>
+                    <p>Waktu: ${data.time}</p>
+                </div>
+            `;
+            attendanceList.prepend(div);
+        }
+    </script>
+</body>
+</html>
